@@ -1,0 +1,35 @@
+# Python / Backend
+backend/__pycache__/
+**/__pycache__/
+backend/.env
+.env
+backend/smart_door.db
+backend/smartdoor.db
+*.db
+backend/firebase-service-account.json
+firebase-service-account.json
+backend/images/
+backend/known_faces/
+backend/test_visitor.jpg
+.venv/
+venv/
+*.pyc
+
+# Local deployment scripts & secrets
+deploy_to_pi.py
+smart_door_app/android/app/google-services.json
+smart_door_app/ios/Runner/GoogleService-Info.plist
+*.apk
+
+# Flutter / Frontend
+smart_door_app/.dart_tool/
+smart_door_app/.flutter-plugins
+smart_door_app/.flutter-plugins-dependencies
+smart_door_app/.packages
+smart_door_app/build/
+smart_door_app/android/.gradle/
+smart_door_app/android/local.properties
+smart_door_app/android/key.properties
+smart_door_app/android/app/debug/
+smart_door_app/android/app/profile/
+smart_door_app/android/app/release/

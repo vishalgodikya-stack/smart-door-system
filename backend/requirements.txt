@@ -1,0 +1,19 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+Pillow==10.3.0
+SQLAlchemy==2.0.30
+python-dotenv==1.0.1
+websockets==12.0
+aiofiles==23.2.1
+firebase-admin==6.5.0
+
+# --- Raspberry Pi only (comment out on Windows for dev) ---
+# RPi.GPIO==0.7.1
+# picamera2==0.3.19
+# face_recognition==1.3.0
+# numpy==1.26.4

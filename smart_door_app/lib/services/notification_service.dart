@@ -11,96 +11,117 @@ class NotificationService {
 
   Future<void> init() async {
     // 1. Initialize Local Notifications (for foreground & custom popups)
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings();
-    await _local.initialize(
-      const InitializationSettings(android: android, iOS: ios),
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        final payload = response.payload;
-        if (payload != null && int.tryParse(payload) != null) {
-          navigateToAlert(int.parse(payload));
-        }
-      },
-    );
+    try {
+      const android = AndroidInitializationSettings('ic_launcher');
+      const ios = DarwinInitializationSettings();
+      await _local.initialize(
+        const InitializationSettings(android: android, iOS: ios),
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          final payload = response.payload;
+          if (payload != null && int.tryParse(payload) != null) {
+            navigateToAlert(int.parse(payload));
+          }
+        },
+      );
 
-    final androidPlugin = _local
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
+      final androidPlugin = _local
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.requestNotificationsPermission();
 
-    // Register high-importance notification channel with Android OS
-    const channel = AndroidNotificationChannel(
-      'security_alerts',
-      'Security Alerts',
-      description: 'Doorbell and intruder security alerts',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-      showBadge: true,
-    );
-    await androidPlugin?.createNotificationChannel(channel);
-
-    // 2. Initialize Firebase Messaging Permissions & Foreground Display
-    NotificationSettings settings = await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
-    await _fcm.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      try {
-        String? token = await _fcm.getToken();
-        if (token != null) await _updateTokenOnServer(token);
-      } catch (e) {
-        if (kDebugMode) print('Could not get FCM token: $e');
-      }
+      // Register high-importance notification channel with Android OS
+      const channel = AndroidNotificationChannel(
+        'security_alerts',
+        'Security Alerts',
+        description: 'Doorbell and intruder security alerts',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        showBadge: true,
+      );
+      await androidPlugin?.createNotificationChannel(channel);
+      if (kDebugMode) print('[NOTIF] Notification channel "security_alerts" configured.');
+    } catch (e) {
+      if (kDebugMode) print('[NOTIF] Local Notifications Init Error: $e');
     }
 
-    _fcm.onTokenRefresh.listen((newToken) => _updateTokenOnServer(newToken));
+    // 2. Initialize Firebase Messaging Permissions & Listeners
+    try {
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      if (kDebugMode) print('[FCM] Permission status: ${settings.authorizationStatus}');
 
-    // 3. Cold Start from terminated state
-    _fcm.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
+      await _fcm.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Fetch initial token
+      await syncToken();
+
+      // Listen for token refresh
+      _fcm.onTokenRefresh.listen((newToken) {
+        if (kDebugMode) print('[FCM] Token refreshed: $newToken');
+        _updateTokenOnServer(newToken);
+      });
+
+      // 3. Cold Start from terminated state
+      _fcm.getInitialMessage().then((RemoteMessage? message) {
+        if (message != null) {
+          final alertIdStr = message.data['alert_id'];
+          if (alertIdStr != null && int.tryParse(alertIdStr.toString()) != null) {
+            Future.delayed(const Duration(milliseconds: 700), () {
+              navigateToAlert(int.parse(alertIdStr.toString()));
+            });
+          }
+        }
+      });
+
+      // 4. Background notification tap (app resumed from background)
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         final alertIdStr = message.data['alert_id'];
         if (alertIdStr != null && int.tryParse(alertIdStr.toString()) != null) {
-          Future.delayed(const Duration(milliseconds: 700), () {
-            navigateToAlert(int.parse(alertIdStr.toString()));
-          });
+          navigateToAlert(int.parse(alertIdStr.toString()));
         }
+      });
+
+      // 5. Foreground Firebase message listener
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+        if (kDebugMode) print('[FCM] Received foreground message: ${message.data}');
+        final title = message.notification?.title ?? '🔔 Doorbell Ring';
+        final body = message.notification?.body ?? 'Someone is at the door! Tap to allow or deny.';
+        final alertIdStr = message.data['alert_id'];
+        final imageUrl = message.data['image_url'] ?? message.notification?.android?.imageUrl;
+        final alertId = alertIdStr != null ? int.tryParse(alertIdStr.toString()) : null;
+
+        await showAlertNotification(
+          id: alertId ?? message.hashCode,
+          title: title,
+          body: body,
+          imageUrl: imageUrl,
+          payload: alertId?.toString(),
+        );
+      });
+    } catch (e) {
+      if (kDebugMode) print('[FCM] FCM setup error: $e');
+    }
+  }
+
+  Future<void> syncToken() async {
+    try {
+      String? token = await _fcm.getToken();
+      if (token != null && token.isNotEmpty) {
+        if (kDebugMode) print('[FCM] Device token: $token');
+        await _updateTokenOnServer(token);
       }
-    });
-
-    // 4. Background notification tap (app resumed from background)
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final alertIdStr = message.data['alert_id'];
-      if (alertIdStr != null && int.tryParse(alertIdStr.toString()) != null) {
-        navigateToAlert(int.parse(alertIdStr.toString()));
-      }
-    });
-
-    // 5. Foreground Firebase message listener
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      final title = message.notification?.title ?? '🔔 Doorbell Ring';
-      final body = message.notification?.body ?? 'Someone is at the door! Tap to allow or deny.';
-      final alertIdStr = message.data['alert_id'];
-      final imageUrl = message.data['image_url'] ?? message.notification?.android?.imageUrl;
-      final alertId = alertIdStr != null ? int.tryParse(alertIdStr.toString()) : null;
-
-      await showAlertNotification(
-        id: alertId ?? message.hashCode,
-        title: title,
-        body: body,
-        imageUrl: imageUrl,
-        payload: alertId?.toString(),
-      );
-    });
+    } catch (e) {
+      if (kDebugMode) print('[FCM] Error fetching device token: $e');
+    }
   }
 
   static Future<void> showAlertNotification({
@@ -129,6 +150,7 @@ class NotificationService {
         channelDescription: 'Doorbell and intruder security alerts',
         importance: Importance.max,
         priority: Priority.high,
+        icon: 'ic_launcher',
         styleInformation: BigPictureStyleInformation(
           pictureBitmap,
           largeIcon: pictureBitmap,
@@ -145,6 +167,7 @@ class NotificationService {
         channelDescription: 'Doorbell and intruder security alerts',
         importance: Importance.max,
         priority: Priority.high,
+        icon: 'ic_launcher',
         showWhen: true,
       );
     }
@@ -169,8 +192,9 @@ class NotificationService {
   Future<void> _updateTokenOnServer(String token) async {
     try {
       await ApiService().updateFcmToken(token);
+      if (kDebugMode) print('[FCM] Token updated on server successfully.');
     } catch (e) {
-      if (kDebugMode) print('FCM Error: $e');
+      if (kDebugMode) print('[FCM] Token update on server failed: $e');
     }
   }
 }

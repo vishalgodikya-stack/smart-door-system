@@ -28,6 +28,9 @@ class AuthNotifier extends Notifier<AuthState> {
     final svc = ref.read(authServiceProvider);
     final user = await svc.getCurrentUser();
     state = AuthState(user: user);
+    if (user != null) {
+      NotificationService().syncToken();
+    }
     return user != null;
   }
 
@@ -40,7 +43,8 @@ class AuthNotifier extends Notifier<AuthState> {
       state = AuthState(user: user);
       
       // Sync FCM Token immediately after login
-      NotificationService().init();
+      await NotificationService().init();
+      await NotificationService().syncToken();
       
       return true;
     } catch (e) {

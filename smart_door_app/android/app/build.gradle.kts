@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smart_door_app"
+    namespace = "com.smartdoor.smart_door_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.smart_door_app"
+        applicationId = "com.smartdoor.smart_door_app"
         minSdk = flutter.minSdkVersion // Required for coreLibraryDesugaring
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

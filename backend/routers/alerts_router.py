@@ -130,9 +130,10 @@ async def reject_alert(
 async def send_push_notification(db: Session, title: str, body: str, data: dict = None, image_url: str = None):
     """Sends a push notification to all admin and member users who have a registered FCM token."""
     users = db.query(User).filter(User.fcm_token != None, User.role.in_(["admin", "member"])).all()
-    tokens = [u.fcm_token for u in users]
+    tokens = list({u.fcm_token for u in users if u.fcm_token})
 
     if not tokens:
+        print("[FCM] No registered device tokens found.")
         return
 
     notification_kwargs = {
@@ -165,6 +166,10 @@ async def send_push_notification(db: Session, title: str, body: str, data: dict 
     try:
         response = messaging.send_each_for_multicast(message)
         print(f"[FCM] Successfully sent {response.success_count} notifications (failed: {response.failure_count})")
+        if response.failure_count > 0:
+            for idx, resp in enumerate(response.responses):
+                if not resp.success:
+                    print(f"[FCM] Token #{idx} failed: {resp.exception}")
     except Exception as e:
         print(f"[FCM] Error sending notifications: {e}")
 

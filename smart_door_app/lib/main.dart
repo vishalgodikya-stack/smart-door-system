@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
@@ -44,15 +45,21 @@ void navigateToAlert(int alertId) {
   appRouter.push('/home/alert/$alertId');
 }
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
     // Initialize Firebase
     await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     
     // Initialize Push Notifications
-    NotificationService().init().catchError((e) => print("Notification Init Error: $e"));
+    await NotificationService().init();
   } catch (e) {
     print("Firebase/Notification Startup Error: $e");
   }

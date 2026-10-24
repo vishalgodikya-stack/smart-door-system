@@ -96,8 +96,8 @@ def _trigger_doorbell_alert():
             # Send FCM Push Notification
             try:
                 from routers.alerts_router import send_push_notification
-                title = "🔔 Doorbell Ring"
-                body = "Someone is at the door! Tap to allow or deny entry."
+                title = "🔔 Someone at the Door"
+                body = "Doorbell ring — tap to allow or deny entry."
                 data = {
                     "alert_id": str(alert.id),
                     "type": "new_alert",

@@ -130,7 +130,7 @@ Update `smart_door_app/lib/config/api_config.dart` or pass `--dart-define`:
 ```bash
 cd smart_door_app
 flutter pub get
-flutter build apk --release --dart-define=API_BASE_URL=https://your-pi-hostname.ts.net
+flutter build apk --release --no-tree-shake-icons --dart-define=API_BASE_URL=https://your-pi-hostname.ts.net
 ```
 *(If using Firebase Cloud Messaging, place your `google-services.json` in `smart_door_app/android/app/google-services.json` before building).*
 

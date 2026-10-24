@@ -127,19 +127,23 @@ async def reject_alert(
     return {"message": "Access rejected"}
 
 
-async def send_push_notification(db: Session, title: str, body: str, data: dict = None):
-    """Sends a push notification to all admin users who have a registered FCM token."""
-    users = db.query(User).filter(User.fcm_token != None, User.role == "admin").all()
+async def send_push_notification(db: Session, title: str, body: str, data: dict = None, image_url: str = None):
+    """Sends a push notification to all admin and member users who have a registered FCM token."""
+    users = db.query(User).filter(User.fcm_token != None, User.role.in_(["admin", "member"])).all()
     tokens = [u.fcm_token for u in users]
 
     if not tokens:
         return
 
+    notification_kwargs = {
+        "title": title,
+        "body": body,
+    }
+    if image_url:
+        notification_kwargs["image"] = image_url
+
     message = messaging.MulticastMessage(
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
+        notification=messaging.Notification(**notification_kwargs),
         data=data or {},
         tokens=tokens,
     )

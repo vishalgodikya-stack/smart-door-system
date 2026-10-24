@@ -79,7 +79,7 @@ class ApiService {
   Future<Map<String, dynamic>> startFaceEnrollment() async {
     final resp = await http
         .post(Uri.parse(ApiConfig.enrollStart), headers: await _headers)
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 20));
     _check(resp);
     return jsonDecode(resp.body);
   }

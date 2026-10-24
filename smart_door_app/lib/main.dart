@@ -4,9 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'providers/auth_provider.dart';
-import 'providers/alert_provider.dart';
-import 'providers/door_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
@@ -21,27 +18,7 @@ import 'screens/users_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/pin_otp_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    // Initialize Firebase
-    await Firebase.initializeApp();
-    
-    // Initialize Push Notifications (in background so it doesn't hang the app)
-    NotificationService().init().catchError((e) => print("Notification Init Error: $e"));
-  } catch (e) {
-    print("Firebase/Notification Startup Error: $e");
-  }
-  
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
-  runApp(const ProviderScope(child: SmartDoorApp()));
-}
-
-final _router = GoRouter(
+final appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
@@ -63,6 +40,30 @@ final _router = GoRouter(
   ],
 );
 
+void navigateToAlert(int alertId) {
+  appRouter.push('/home/alert/$alertId');
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Initialize Firebase
+    await Firebase.initializeApp();
+    
+    // Initialize Push Notifications
+    NotificationService().init().catchError((e) => print("Notification Init Error: $e"));
+  } catch (e) {
+    print("Firebase/Notification Startup Error: $e");
+  }
+  
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+  runApp(const ProviderScope(child: SmartDoorApp()));
+}
+
 class SmartDoorApp extends ConsumerWidget {
   const SmartDoorApp({super.key});
 
@@ -71,7 +72,7 @@ class SmartDoorApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'SmartDoor',
       theme: AppTheme.dark,
-      routerConfig: _router,
+      routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );
   }

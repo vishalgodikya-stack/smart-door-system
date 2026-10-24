@@ -23,13 +23,32 @@ class NotificationService {
       },
     );
 
-    await _local
+    final androidPlugin = _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.requestNotificationsPermission();
 
-    // 2. Initialize Firebase Messaging Permissions
+    // Register high-importance notification channel with Android OS
+    const channel = AndroidNotificationChannel(
+      'security_alerts',
+      'Security Alerts',
+      description: 'Doorbell and intruder security alerts',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+    await androidPlugin?.createNotificationChannel(channel);
+
+    // 2. Initialize Firebase Messaging Permissions & Foreground Display
     NotificationSettings settings = await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+
+    await _fcm.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,

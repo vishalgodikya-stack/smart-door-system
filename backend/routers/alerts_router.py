@@ -142,14 +142,29 @@ async def send_push_notification(db: Session, title: str, body: str, data: dict 
     if image_url:
         notification_kwargs["image"] = image_url
 
+    android_notification_kwargs = {
+        "channel_id": "security_alerts",
+        "priority": "max",
+        "default_sound": True,
+        "default_vibrate_timings": True,
+    }
+    if image_url:
+        android_notification_kwargs["image"] = image_url
+
+    android_config = messaging.AndroidConfig(
+        priority="high",
+        notification=messaging.AndroidNotification(**android_notification_kwargs),
+    )
+
     message = messaging.MulticastMessage(
         notification=messaging.Notification(**notification_kwargs),
+        android=android_config,
         data=data or {},
         tokens=tokens,
     )
     try:
         response = messaging.send_each_for_multicast(message)
-        print(f"[FCM] Successfully sent {response.success_count} notifications")
+        print(f"[FCM] Successfully sent {response.success_count} notifications (failed: {response.failure_count})")
     except Exception as e:
         print(f"[FCM] Error sending notifications: {e}")
 

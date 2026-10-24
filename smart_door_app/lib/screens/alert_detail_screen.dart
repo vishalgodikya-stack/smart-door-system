@@ -135,24 +135,29 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                     ),
                   ]),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Someone at the Door',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Warning box for pending
                   if (alert.isPending)
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.dangerGlow,
+                        color: AppColors.warning.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.danger.withOpacity(0.4)),
+                        border: Border.all(color: AppColors.warning.withOpacity(0.4)),
                       ),
                       child: Row(children: const [
-                        Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 24),
+                        Icon(Icons.doorbell_rounded, color: AppColors.warning, size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'This person is not recognized. Do you want to allow entry?',
-                            style: TextStyle(color: AppColors.danger, fontSize: 14),
+                            'Someone is at the door. Do you want to allow or deny entry?',
+                            style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
                           ),
                         ),
                       ]),

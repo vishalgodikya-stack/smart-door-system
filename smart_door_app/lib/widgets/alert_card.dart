@@ -64,8 +64,8 @@ class AlertCard extends StatelessWidget {
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 ]),
                 const SizedBox(height: 4),
-                const Text('Unknown Person', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-                const Text('Unauthorized access attempt', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const Text('Someone at the Door', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+                const Text('Doorbell ring — tap to allow or deny', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
 
                 // Quick approve/reject (pending only & canDecide)
                 if (alert.isPending && canDecide) ...[

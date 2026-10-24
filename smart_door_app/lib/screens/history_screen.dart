@@ -138,7 +138,7 @@ class _LogItem extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(log.personName ?? 'Unknown Person',
+            Text(log.personName ?? 'Someone at the Door',
                 style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
             const SizedBox(height: 3),
             Text(_actionLabel(log.action, log.performedByName),

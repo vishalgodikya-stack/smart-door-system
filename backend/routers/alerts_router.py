@@ -148,7 +148,7 @@ async def send_push_notification(db: Session, title: str, body: str, data: dict 
         tokens=tokens,
     )
     try:
-        response = messaging.send_multicast(message)
+        response = messaging.send_each_for_multicast(message)
         print(f"[FCM] Successfully sent {response.success_count} notifications")
     except Exception as e:
         print(f"[FCM] Error sending notifications: {e}")
@@ -188,13 +188,15 @@ async def request_access(
 
     await manager.broadcast("new_alert", out_dict)
 
+    image_url = f"{BASE_URL}/images/{filename}"
     title = "👋 Access Request"
     body = f"{current_user.name} is requesting access to the front door!"
     await send_push_notification(
         db,
         title,
         body,
-        {"alert_id": str(alert.id), "type": "new_alert"}
+        {"alert_id": str(alert.id), "type": "new_alert", "image_url": image_url},
+        image_url=image_url,
     )
 
     return {"message": "Access request sent successfully", "id": alert.id}
@@ -235,11 +237,13 @@ async def receive_camera_alert(
     await manager.broadcast("new_alert", out_dict)
 
     # Send Push Notification!
+    image_url = f"{BASE_URL}/images/{filename}"
     await send_push_notification(
         db,
-        "🚨 Security Alert",
-        "Unauthorized person detected at the door!",
-        {"alert_id": str(alert.id), "type": "new_alert"}
+        "🔔 Someone at the Door",
+        "Someone is at the door! Tap to allow or deny entry.",
+        {"alert_id": str(alert.id), "type": "new_alert", "image_url": image_url},
+        image_url=image_url,
     )
 
     return {"message": "Alert received and broadcasted", "id": alert.id}

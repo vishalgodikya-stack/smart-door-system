@@ -65,7 +65,7 @@ def register(invite_token: str, body: RegisterRequest, db: Session = Depends(get
         name=body.name,
         email=body.email,
         password_hash=hash_password(body.password),
-        role=invite.role,
+        role="member" if invite.role not in ("admin", "member") else invite.role,
     )
     db.add(user)
     invite.used = True

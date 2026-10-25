@@ -102,7 +102,7 @@ class Invite(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String(100), unique=True, nullable=False)
-    role = Column(String(20), nullable=False)
+    role = Column(String(20), nullable=False, default="member")  # admin / member
     email = Column(String(200), nullable=True)
     used = Column(Boolean, default=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)

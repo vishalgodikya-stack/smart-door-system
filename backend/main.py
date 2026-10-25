@@ -13,7 +13,7 @@ import firebase_admin
 from firebase_admin import credentials
 
 from auth import decode_token, hash_password
-from database import DoorState, SessionLocal, User, create_tables
+from database import DoorState, Invite, SessionLocal, User, create_tables
 from websocket_manager import manager
 
 from routers import auth_router, door_router, alerts_router, persons_router, users_router, media_router
@@ -76,8 +76,10 @@ async def lifespan(app: FastAPI):
             )
             db.add(member)
 
-        # Migrate any legacy viewer accounts to member
+        # Delete demo viewer if present, and migrate any other legacy viewer accounts or invites to member
+        db.query(User).filter(User.email == "viewer@smartdoor.com").delete()
         db.query(User).filter(User.role == "viewer").update({"role": "member"})
+        db.query(Invite).filter(Invite.role == "viewer").update({"role": "member"})
 
         # Init door state if not exists
         if not db.query(DoorState).first():

@@ -14,7 +14,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _emailCtrl = TextEditingController();
+  final _usernameCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
@@ -35,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void dispose() {
     _ctrl.dispose();
-    _emailCtrl.dispose();
+    _usernameCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
@@ -43,7 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final ok = await ref.read(authProvider.notifier).login(
-      _emailCtrl.text.trim(),
+      _usernameCtrl.text.trim(),
       _passCtrl.text,
     );
     if (ok && mounted) context.go('/home');
@@ -111,18 +111,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       const SizedBox(height: 20),
                     ],
 
-                    // Email field
-                    const Text('Email', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
+                    // Username field
+                    const Text('Username', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
                     TextFormField(
-                      controller: _emailCtrl,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _usernameCtrl,
+                      keyboardType: TextInputType.text,
                       style: const TextStyle(color: AppColors.textPrimary),
                       decoration: const InputDecoration(
-                        hintText: 'admin@smartdoor.local',
-                        prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20),
+                        hintText: 'e.g. harish or vishal',
+                        prefixIcon: Icon(Icons.person_outline, color: AppColors.textMuted, size: 20),
                       ),
-                      validator: (v) => v!.isEmpty ? 'Email required' : null,
+                      validator: (v) => v!.isEmpty ? 'Username required' : null,
                     ),
                     const SizedBox(height: 20),
 
@@ -165,12 +165,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                       ),
-                      child: Row(children: const [
-                        Icon(Icons.info_outline, color: AppColors.primary, size: 16),
+                      child: const Row(children: [
+                        Icon(Icons.shield_outlined, color: AppColors.primary, size: 16),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Team members: use the invite link you received to create your account.',
+                            'Need an account? Contact an Admin to have your account created.',
                             style: TextStyle(color: AppColors.primary, fontSize: 12),
                           ),
                         ),

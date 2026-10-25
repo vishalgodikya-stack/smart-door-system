@@ -122,6 +122,13 @@ class _HomeTab extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
     final door = ref.watch(doorProvider);
     final alertState = ref.watch(alertProvider);
+    final rawName = (user?.username != null && user!.username.isNotEmpty)
+        ? user.username
+        : ((user?.name != null && user!.name.isNotEmpty) ? user.name : 'User');
+    final displayName = rawName.isNotEmpty
+        ? rawName[0].toUpperCase() + rawName.substring(1)
+        : 'User';
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
     final pending = alertState.pending;
 
     return SafeArea(
@@ -137,14 +144,14 @@ class _HomeTab extends ConsumerWidget {
                     backgroundColor: AppColors.primaryGlow,
                     radius: 22,
                     child: Text(
-                      user?.name.substring(0, 1).toUpperCase() ?? 'U',
+                      initial,
                       style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Hello, ${user?.name.split(' ').first ?? 'User'}',
+                      Text('Hello, $displayName',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                       RoleBadge(role: user?.role ?? 'member'),
                     ]),

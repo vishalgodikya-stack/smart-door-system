@@ -98,9 +98,9 @@ def generate_totp_secret() -> str:
     return pyotp.random_base32()
 
 
-def get_totp_uri(secret: str, email: str) -> str:
+def get_totp_uri(secret: str, account_name: str) -> str:
     return pyotp.totp.TOTP(secret).provisioning_uri(
-        name=email,
+        name=account_name,
         issuer_name="SmartDoor",
     )
 

@@ -77,8 +77,7 @@ class _DoorStatusCardState extends State<DoorStatusCard> with SingleTickerProvid
           child: Text(label, key: ValueKey(label),
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: color, letterSpacing: 2)),
         ),
-        const SizedBox(height: 4),
-        const Text('Front Door', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+
 
         if (widget.door.lastUpdated != null) ...[
           const SizedBox(height: 6),

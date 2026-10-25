@@ -128,14 +128,30 @@ class ApiService {
     return (jsonDecode(resp.body) as List).map((e) => UserModel.fromJson(e)).toList();
   }
 
-  Future<Map<String, dynamic>> createInvite(String role, {String? email}) async {
+  Future<UserModel> createUser({
+    required String username,
+    required String password,
+    required String role,
+  }) async {
     final resp = await http.post(
-      Uri.parse(ApiConfig.createInvite),
+      Uri.parse(ApiConfig.users),
       headers: await _headers,
-      body: jsonEncode({'role': role, 'email': email}),
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+        'role': role,
+      }),
     );
     _check(resp);
-    return jsonDecode(resp.body);
+    return UserModel.fromJson(jsonDecode(resp.body));
+  }
+
+  Future<void> resetUserSession(int id) async {
+    final resp = await http.post(
+      Uri.parse(ApiConfig.resetUserSession(id)),
+      headers: await _headers,
+    );
+    _check(resp);
   }
 
   Future<void> deleteUser(int id) async {

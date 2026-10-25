@@ -35,13 +35,18 @@ class SettingsScreen extends ConsumerWidget {
               CircleAvatar(
                 backgroundColor: AppColors.primary.withOpacity(0.2),
                 radius: 28,
-                child: Text(user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                    style: const TextStyle(color: AppColors.primary, fontSize: 22, fontWeight: FontWeight.w700)),
+                child: Text(
+                  (user?.username.isNotEmpty == true
+                          ? user!.username[0]
+                          : (user?.name.isNotEmpty == true ? user!.name[0] : 'U'))
+                      .toUpperCase(),
+                  style: const TextStyle(color: AppColors.primary, fontSize: 22, fontWeight: FontWeight.w700),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user?.name ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w600)),
-                Text(user?.email ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                Text(user?.name.isNotEmpty == true ? user!.name : (user?.username ?? ''), style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w600)),
+                Text('@${user?.username ?? ''}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               ])),
             ]),
           ),

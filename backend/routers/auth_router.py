@@ -14,10 +14,10 @@ from auth import (
     create_access_token, get_current_user, hash_password, hash_pin,
     verify_password, verify_pin, verify_totp, generate_totp_secret, get_totp_uri
 )
-from database import Invite, User, get_db
+from database import User, get_db
 from models import (
     LoginRequest, OTPVerifyRequest, PinSetupRequest, PinVerifyRequest,
-    RegisterRequest, TokenResponse, UserOut
+    TokenResponse, UserOut
 )
 
 router = APIRouter()
@@ -27,9 +27,10 @@ def _user_out(user: User) -> UserOut:
     return UserOut(
         id=user.id,
         name=user.name,
-        email=user.email,
+        username=user.username,
         role=user.role,
         is_active=user.is_active,
+        is_logged_in=user.is_logged_in,
         fcm_token=user.fcm_token,
         created_at=user.created_at,
         has_pin=user.pin_hash is not None,
@@ -39,41 +40,30 @@ def _user_out(user: User) -> UserOut:
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email, User.is_active == True).first()
+    clean_username = body.username.strip().lower()
+    user = db.query(User).filter(User.username == clean_username, User.is_active == True).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    token = create_access_token(user.id, user.role)
-    return TokenResponse(access_token=token, user=_user_out(user))
 
+    if user.is_logged_in:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account already signed in on another device. Please sign out first or ask an Admin to reset your session.",
+        )
 
-@router.post("/register/{invite_token}", response_model=TokenResponse)
-def register(invite_token: str, body: RegisterRequest, db: Session = Depends(get_db)):
-    invite = db.query(Invite).filter(
-        Invite.token == invite_token,
-        Invite.used == False,
-    ).first()
-    if not invite:
-        raise HTTPException(status_code=400, detail="Invalid or expired invite link")
-    if invite.expires_at and invite.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Invite link has expired")
-
-    existing = db.query(User).filter(User.email == body.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    user = User(
-        name=body.name,
-        email=body.email,
-        password_hash=hash_password(body.password),
-        role="member" if invite.role not in ("admin", "member") else invite.role,
-    )
-    db.add(user)
-    invite.used = True
+    user.is_logged_in = True
     db.commit()
     db.refresh(user)
 
     token = create_access_token(user.id, user.role)
     return TokenResponse(access_token=token, user=_user_out(user))
+
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_user.is_logged_in = False
+    db.commit()
+    return {"message": "Logged out successfully"}
 
 
 @router.get("/me", response_model=UserOut)
@@ -126,7 +116,7 @@ def setup_totp(current_user: User = Depends(get_current_user), db: Session = Dep
     current_user.totp_secret = secret
     db.commit()
 
-    uri = get_totp_uri(secret, current_user.email)
+    uri = get_totp_uri(secret, current_user.username)
     img = qrcode.make(uri)
     buf = io.BytesIO()
     img.save(buf, format="PNG")

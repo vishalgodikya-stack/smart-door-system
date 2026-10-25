@@ -1,30 +1,27 @@
 """
-routers/users_router.py — User management and invite system (Admin only)
+routers/users_router.py — User management (Admin only)
 """
-import secrets
-from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from auth import get_current_user, require_admin
-from database import Invite, User, get_db
-from models import InviteCreateRequest, InviteOut, UserOut, UserUpdate
+from auth import get_current_user, hash_password, require_admin
+from database import User, get_db
+from models import UserCreateRequest, UserOut, UserUpdate
 
 router = APIRouter()
-
-import os
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 
 def _user_out(user: User) -> UserOut:
     return UserOut(
         id=user.id,
         name=user.name,
-        email=user.email,
+        username=user.username,
         role=user.role,
         is_active=user.is_active,
+        is_logged_in=user.is_logged_in,
+        fcm_token=user.fcm_token,
         created_at=user.created_at,
         has_pin=user.pin_hash is not None,
         has_totp=user.totp_secret is not None,
@@ -38,6 +35,64 @@ def list_users(
 ):
     users = db.query(User).order_by(User.created_at).all()
     return [_user_out(u) for u in users]
+
+
+@router.post("", response_model=UserOut)
+def create_user(
+    body: UserCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    clean_role = body.role.strip().lower()
+    if clean_role not in ("admin", "member"):
+        raise HTTPException(status_code=400, detail="Invalid role. Must be 'admin' or 'member'")
+
+    if clean_role == "admin":
+        admin_count = db.query(User).filter(User.role == "admin").count()
+        if admin_count >= 2:
+            raise HTTPException(
+                status_code=400,
+                detail="Maximum 2 admins allowed. Remove an existing admin first.",
+            )
+
+    clean_username = body.username.strip().lower()
+    if not clean_username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+
+    existing = db.query(User).filter(User.username == clean_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Username '{clean_username}' already exists")
+
+    new_user = User(
+        name=body.username.strip(),
+        username=clean_username,
+        password_hash=hash_password(body.password),
+        role=clean_role,
+        is_active=True,
+        is_logged_in=False,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return _user_out(new_user)
+
+
+@router.post("/{user_id}/reset-session")
+def reset_user_session(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_logged_in = False
+    db.commit()
+    return {
+        "message": f"Session for '{user.username}' reset successfully",
+        "user_id": user_id,
+        "is_logged_in": False,
+    }
 
 
 @router.patch("/{user_id}", response_model=UserOut)
@@ -56,9 +111,24 @@ def update_user(
     if body.name is not None:
         user.name = body.name
     if body.role is not None:
-        if body.role not in ("admin", "member"):
+        clean_role = body.role.strip().lower()
+        if clean_role not in ("admin", "member"):
             raise HTTPException(status_code=400, detail="Invalid role")
-        user.role = body.role
+        if clean_role == "admin" and user.role != "admin":
+            admin_count = db.query(User).filter(User.role == "admin").count()
+            if admin_count >= 2:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Maximum 2 admins allowed. Remove an existing admin first.",
+                )
+        if clean_role == "member" and user.role == "admin":
+            admin_count = db.query(User).filter(User.role == "admin").count()
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot demote the last remaining admin.",
+                )
+        user.role = clean_role
     if body.is_active is not None:
         user.is_active = body.is_active
 
@@ -78,58 +148,16 @@ def delete_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if user.role == "admin":
+        admin_count = db.query(User).filter(User.role == "admin").count()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete the last remaining admin.",
+            )
+
+    username = user.username
     db.delete(user)
     db.commit()
-    return {"message": f"User {user.email} removed"}
-
-
-@router.post("/invite", response_model=InviteOut)
-def create_invite(
-    body: InviteCreateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
-):
-    if body.role not in ("admin", "member"):
-        raise HTTPException(status_code=400, detail="Invalid role")
-
-    token = secrets.token_urlsafe(32)
-    expires = datetime.utcnow() + timedelta(days=7)
-
-    invite = Invite(
-        token=token,
-        role=body.role,
-        email=body.email,
-        created_by=current_user.id,
-        expires_at=expires,
-    )
-    db.add(invite)
-    db.commit()
-    db.refresh(invite)
-
-    invite_url = f"{BASE_URL}/auth/register/{token}"
-    return InviteOut(
-        token=invite.token,
-        role=invite.role,
-        email=invite.email,
-        invite_url=invite_url,
-        expires_at=invite.expires_at,
-        created_at=invite.created_at,
-    )
-
-
-@router.get("/invites")
-def list_invites(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
-):
-    invites = db.query(Invite).order_by(Invite.created_at.desc()).limit(20).all()
-    return [
-        {
-            "token": i.token[:8] + "...",
-            "role": i.role,
-            "email": i.email,
-            "used": i.used,
-            "expires_at": i.expires_at,
-        }
-        for i in invites
-    ]
+    return {"message": f"User '{username}' removed"}

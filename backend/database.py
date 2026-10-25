@@ -34,13 +34,13 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    email = Column(String(200), unique=True, nullable=False, index=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
     password_hash = Column(String(200), nullable=False)
     pin_hash = Column(String(200), nullable=True)
     totp_secret = Column(String(100), nullable=True)
     role = Column(String(20), default="member")   # admin / member
-    invite_token = Column(String(100), nullable=True, unique=True)
     is_active = Column(Boolean, default=True)
+    is_logged_in = Column(Boolean, default=False, nullable=False)
     fcm_token = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -95,19 +95,6 @@ class DoorState(Base):
     status = Column(String(10), default="locked")  # locked / unlocked
     last_updated = Column(DateTime, default=datetime.utcnow)
     changed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-
-
-class Invite(Base):
-    __tablename__ = "invites"
-
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String(100), unique=True, nullable=False)
-    role = Column(String(20), nullable=False, default="member")  # admin / member
-    email = Column(String(200), nullable=True)
-    used = Column(Boolean, default=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    expires_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 # ─── DB Init ────────────────────────────────────────────────────────────────────

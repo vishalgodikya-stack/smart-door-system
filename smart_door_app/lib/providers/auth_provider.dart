@@ -34,11 +34,11 @@ class AuthNotifier extends Notifier<AuthState> {
     return user != null;
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String username, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final svc = ref.read(authServiceProvider);
-      final data = await svc.login(email, password);
+      final data = await svc.login(username, password);
       final user = UserModel.fromJson(data['user']);
       state = AuthState(user: user);
       

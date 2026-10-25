@@ -4,20 +4,20 @@ Smart Door Security System
 """
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 # ─── Auth / User ────────────────────────────────────────────────────────────────
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 
-class RegisterRequest(BaseModel):
-    name: str
-    email: EmailStr
+class UserCreateRequest(BaseModel):
+    username: str
     password: str
+    role: str = "member"
 
 
 class TokenResponse(BaseModel):
@@ -41,9 +41,10 @@ class PinSetupRequest(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
-    email: str
+    username: str
     role: str
     is_active: bool
+    is_logged_in: bool = False
     fcm_token: Optional[str] = None
     created_at: datetime
     has_pin: bool
@@ -58,25 +59,6 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
     fcm_token: Optional[str] = None
-
-
-# ─── Invite ──────────────────────────────────────────────────────────────────────
-
-class InviteCreateRequest(BaseModel):
-    role: str            # admin / member
-    email: Optional[str] = None
-
-
-class InviteOut(BaseModel):
-    token: str
-    role: str
-    email: Optional[str]
-    invite_url: str
-    expires_at: Optional[datetime]
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # ─── Door ────────────────────────────────────────────────────────────────────────

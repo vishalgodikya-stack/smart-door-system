@@ -10,11 +10,11 @@ class AuthService {
   static const _tokenKey = 'jwt_token';
   static const _userKey = 'current_user';
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String username, String password) async {
     final resp = await http.post(
       Uri.parse(ApiConfig.login),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({'username': username, 'password': password}),
     );
     if (resp.statusCode == 200) {
       final data = jsonDecode(resp.body);
@@ -27,6 +27,10 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    try {
+      final headers = await authHeaders();
+      await http.post(Uri.parse(ApiConfig.logout), headers: headers).timeout(const Duration(seconds: 5));
+    } catch (_) {}
     await _storage.deleteAll();
   }
 

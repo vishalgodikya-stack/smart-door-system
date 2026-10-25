@@ -13,7 +13,7 @@ import firebase_admin
 from firebase_admin import credentials
 
 from auth import decode_token, hash_password
-from database import DoorState, Invite, SessionLocal, User, create_tables
+from database import DoorState, SessionLocal, User, create_tables, engine
 from websocket_manager import manager
 
 from routers import auth_router, door_router, alerts_router, persons_router, users_router, media_router
@@ -21,8 +21,8 @@ from routers import auth_router, door_router, alerts_router, persons_router, use
 load_dotenv()
 
 IMAGES_DIR = os.getenv("IMAGES_DIR", "./images")
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@smartdoor.local")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "changeme123")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs("./known_faces", exist_ok=True)
 
 
 # ─── Firebase Init ──────────────────────────────────────────────────────────────
@@ -43,51 +43,93 @@ else:
     print("[FIREBASE] Warning: firebase-service-account.json not found. Push notifications disabled.")
 
 
+# ─── DB Migration ────────────────────────────────────────────────────────────────
+
+def migrate_database():
+    """Migrate legacy SQLite database schema to username-based auth and remove legacy tables."""
+    with engine.connect() as conn:
+        cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()]
+        if "email" in cols:
+            try:
+                conn.exec_driver_sql("UPDATE access_logs SET performed_by = NULL WHERE performed_by IN (SELECT id FROM users)")
+                conn.commit()
+            except Exception:
+                pass
+            conn.exec_driver_sql("DROP TABLE IF EXISTS users")
+            conn.commit()
+        try:
+            conn.exec_driver_sql("DROP TABLE IF EXISTS invites")
+            conn.commit()
+        except Exception:
+            pass
+
+    create_tables()
+
+    with engine.connect() as conn:
+        cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()]
+        if "username" not in cols:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN username VARCHAR(50)")
+            conn.commit()
+        if "is_logged_in" not in cols:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN is_logged_in BOOLEAN DEFAULT 0 NOT NULL")
+            conn.commit()
+
+
 # ─── Startup ─────────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables and seed initial admin on startup."""
-    create_tables()
+    """Run DB migrations, purge legacy accounts, seed 2 initial admins on startup."""
+    migrate_database()
     os.makedirs(IMAGES_DIR, exist_ok=True)
     os.makedirs("./known_faces", exist_ok=True)
 
     db = SessionLocal()
     try:
-        # Seed admin account if not exists
-        if not db.query(User).filter(User.role == "admin").first():
-            admin = User(
-                name="System Admin",
-                email=ADMIN_EMAIL,
-                password_hash=hash_password(ADMIN_PASSWORD),
+        # Purge legacy accounts
+        db.query(User).filter(
+            User.username.in_(["joe321@gmail.com", "member@smartdoor.com", "admin@smartdoor.local", "viewer@smartdoor.com"])
+        ).delete(synchronize_session=False)
+        db.query(User).filter(User.name.in_(["System Admin", "Demo Member"])).delete(synchronize_session=False)
+
+        # Seed Admin 1: harish
+        harish = db.query(User).filter(User.username == "harish").first()
+        if not harish:
+            harish = User(
+                name="Harish",
+                username="harish",
+                password_hash=hash_password("harish123"),
                 role="admin",
                 is_active=True,
+                is_logged_in=False,
             )
-            db.add(admin)
+            db.add(harish)
+            print("[STARTUP] Seeded admin: harish")
 
-        # Seed demo member if not exists
-        if not db.query(User).filter(User.email == "member@smartdoor.com").first():
-            member = User(
-                name="Demo Member",
-                email="member@smartdoor.com",
-                password_hash=hash_password("member123"),
-                role="member",
+        # Seed Admin 2: vishal
+        vishal = db.query(User).filter(User.username == "vishal").first()
+        if not vishal:
+            vishal = User(
+                name="Vishal",
+                username="vishal",
+                password_hash=hash_password("vishal123"),
+                role="admin",
                 is_active=True,
+                is_logged_in=False,
             )
-            db.add(member)
+            db.add(vishal)
+            print("[STARTUP] Seeded admin: vishal")
 
-        # Delete demo viewer if present, and migrate any other legacy viewer accounts or invites to member
-        db.query(User).filter(User.email == "viewer@smartdoor.com").delete()
-        db.query(User).filter(User.role == "viewer").update({"role": "member"})
-        db.query(Invite).filter(Invite.role == "viewer").update({"role": "member"})
+        # Reset active login sessions on backend restart
+        db.query(User).update({User.is_logged_in: False})
 
         # Init door state if not exists
         if not db.query(DoorState).first():
             db.add(DoorState(id=1, status="locked"))
 
         db.commit()
-        print(f"[STARTUP] Admin account: {ADMIN_EMAIL}")
-        print("[STARTUP] Smart Door backend is ready ✅")
+        print("[STARTUP] Initial Admins active: harish, vishal")
+        print("[STARTUP] Smart Door backend is ready [READY]")
     finally:
         db.close()
 

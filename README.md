@@ -10,7 +10,7 @@ An end-to-end IoT Smart Door Security System powered by **Raspberry Pi 4**, **Re
 - **Live Camera Face Enrollment (`Enroll Face` Tab)**: Admins can register new authorized persons directly from the mobile app using a live stream from the Raspberry Pi camera—detecting face positioning, scanning facial features, and storing the 128-D face encoding in SQLite without uploading static gallery photos.
 - **Instant Intruder Alerts & Push Notifications**: Unknown faces trigger an instant alert with a captured visitor photo, broadcasted in real time via WebSockets and Firebase Cloud Messaging (FCM) push notifications.
 - **Role-Based Access Control (RBAC)**:
-  - **Admin**: Full door control, approve/reject alerts, live face enrollment, manage authorized persons & user invites.
+  - **Admin**: Full door control, approve/reject alerts, live face enrollment, manage authorized persons & users (Max 2 Admins).
   - **Member**: Lock/unlock door, approve/reject visitor alerts, view access logs.
 - **Local Push-Button & Buzzer Doorbell**: Hardware doorbell loop running on the Raspberry Pi (`GPIO 23` input button + `GPIO 24` active buzzer).
 
@@ -30,7 +30,7 @@ smart-door-system/
 │   │   ├── alerts_router.py        # Intruder alerts, access requests & FCM notifications
 │   │   ├── persons_router.py       # Authorized persons CRUD & live camera enrollment API
 │   │   ├── media_router.py         # Visitor image serving (/images) & access history (/logs)
-│   │   └── users_router.py         # User management & role-based invite links
+│   │   └── users_router.py         # User management & session reset
 │   ├── auth.py                     # Password hashing, JWT verification & role guards
 │   ├── database.py                 # SQLAlchemy ORM models (SQLite)
 │   ├── doorbell.py                 # Background GPIO 23/24 push-button & buzzer listener
@@ -74,7 +74,7 @@ Because the Raspberry Pi 4 outputs `3.3V` logic (max ~16 mA per pin) while the s
 
 | Endpoint | Method | Access Role | Description |
 |---|---|---|---|
-| `/auth/login` | `POST` | Public | Authenticate with email & password and receive JWT |
+| `/auth/login` | `POST` | Public | Authenticate with username & password and receive JWT |
 | `/door/status` | `GET` | Any Authenticated | Get current door lock status (`locked` / `unlocked`) |
 | `/door/unlock` | `POST` | Admin, Member | Remotely unlock door (`GPIO 18 HIGH`) with 7s auto-relock |
 | `/door/lock` | `POST` | Admin, Member | Immediately lock door (`GPIO 18 LOW`) |
@@ -145,4 +145,4 @@ flutter build apk --release --no-tree-shake-icons --dart-define=API_BASE_URL=htt
 | **Real-Time Events** | WebSockets + Firebase Cloud Messaging (FCM) |
 | **Computer Vision** | `Picamera2`, `dlib`, `face_recognition`, NumPy, Pillow |
 | **Hardware Control** | `RPi.GPIO` (TIP122 Solenoid Driver + Push-Button/Buzzer Doorbell) |
-| **Authentication** | JWT + `bcrypt` + Role-Based Invite Tokens |
+| **Authentication** | JWT + `bcrypt` (Username & Password, 2-Admin Max, Single Active Device) |

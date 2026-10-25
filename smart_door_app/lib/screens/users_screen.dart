@@ -227,8 +227,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         _load();
                       } catch (e) {
                         if (mounted) {
+                          final msg = e.toString().replaceFirst('Exception: ', '');
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.danger),
+                            SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
                           );
                         }
                       }
@@ -255,8 +256,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
       _load();
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error resetting session: $e'), backgroundColor: AppColors.danger),
+          SnackBar(content: Text('Error resetting session: $msg'), backgroundColor: AppColors.danger),
         );
       }
     }
@@ -297,8 +299,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
         _load();
       } catch (e) {
         if (mounted) {
+          final msg = e.toString().replaceFirst('Exception: ', '');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.danger),
+            SnackBar(content: Text('Error removing user: $msg'), backgroundColor: AppColors.danger),
           );
         }
       }

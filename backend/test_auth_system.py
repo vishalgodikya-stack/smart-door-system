@@ -164,6 +164,84 @@ def run_tests():
             if u["username"] == "member2":
                 client.delete(f"/users/{u['id']}", headers=harish_headers)
 
+        # 9. Input Validation & Edge Cases for User Creation
+        bad_role = client.post("/users", headers=harish_headers, json={
+            "username": "badrole",
+            "password": "password123",
+            "role": "viewer"
+        })
+        assert bad_role.status_code == 400, f"Expected 400 for role 'viewer', got {bad_role.status_code}"
+
+        spaces_user = client.post("/users", headers=harish_headers, json={
+            "username": "bad user",
+            "password": "password123",
+            "role": "member"
+        })
+        assert spaces_user.status_code == 400, f"Expected 400 for username with spaces, got {spaces_user.status_code}"
+
+        empty_pass = client.post("/users", headers=harish_headers, json={
+            "username": "emptypass",
+            "password": "   ",
+            "role": "member"
+        })
+        assert empty_pass.status_code == 400, f"Expected 400 for empty password, got {empty_pass.status_code}"
+        print("[PASS] User creation validation (role, spaces, password) verified.")
+
+        # 10. Member RBAC Authorization Boundaries
+        m_temp = client.post("/users", headers=harish_headers, json={
+            "username": "tempmember",
+            "password": "memberpass123",
+            "role": "member"
+        })
+        assert m_temp.status_code == 200
+        m_temp_id = m_temp.json()["id"]
+
+        m_login = client.post("/auth/login", json={"username": "tempmember", "password": "memberpass123"})
+        assert m_login.status_code == 200
+        m_headers = {"Authorization": f"Bearer {m_login.json()['access_token']}"}
+
+        # Member cannot create users
+        m_create = client.post("/users", headers=m_headers, json={
+            "username": "illegaluser",
+            "password": "password123",
+            "role": "member"
+        })
+        assert m_create.status_code == 403, f"Expected 403 Forbidden for member creating user, got {m_create.status_code}"
+
+        # Member cannot reset session
+        m_reset = client.post(f"/users/{m_temp_id}/reset-session", headers=m_headers)
+        assert m_reset.status_code == 403, f"Expected 403 Forbidden for member resetting session, got {m_reset.status_code}"
+
+        # Member cannot delete user
+        m_del = client.delete(f"/users/{m_temp_id}", headers=m_headers)
+        assert m_del.status_code == 403, f"Expected 403 Forbidden for member deleting user, got {m_del.status_code}"
+        print("[PASS] Member RBAC restrictions verified.")
+
+        # 11. Teardown & Clean Database State
+        # Log out tempmember and delete
+        client.post("/auth/logout", headers=m_headers)
+        client.delete(f"/users/{m_temp_id}", headers=harish_headers)
+
+        # Log out Harish
+        client.post("/auth/logout", headers=harish_headers)
+
+        db = SessionLocal()
+        try:
+            # Ensure all sessions offline
+            db.query(User).update({User.is_logged_in: False})
+            v = db.query(User).filter(User.username == "vishal").first()
+            if v:
+                v.name = "Vishal"
+            db.commit()
+
+            final_users = db.query(User).all()
+            assert len(final_users) == 2, f"Expected exactly 2 users remaining, found {len(final_users)}"
+            assert {u.username for u in final_users} == {"harish", "vishal"}
+            assert all(not u.is_logged_in for u in final_users), "A user was left logged in!"
+            print("[PASS] Teardown clean: DB has exactly 2 admins (harish, vishal), all offline.")
+        finally:
+            db.close()
+
         print("=== ALL BACKEND TESTS PASSED SUCCESSFULLY! ===")
 
 if __name__ == "__main__":

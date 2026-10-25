@@ -58,13 +58,17 @@ def create_user(
     clean_username = body.username.strip().lower()
     if not clean_username:
         raise HTTPException(status_code=400, detail="Username cannot be empty")
+    if " " in clean_username:
+        raise HTTPException(status_code=400, detail="Username cannot contain spaces")
+    if not body.password or not body.password.strip():
+        raise HTTPException(status_code=400, detail="Password cannot be empty")
 
     existing = db.query(User).filter(User.username == clean_username).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Username '{clean_username}' already exists")
 
     new_user = User(
-        name=body.username.strip(),
+        name=body.username.strip().capitalize(),
         username=clean_username,
         password_hash=hash_password(body.password),
         role=clean_role,
@@ -158,6 +162,12 @@ def delete_user(
             )
 
     username = user.username
+    from database import Alert, AccessLog, AuthorizedPerson, DoorState
+    db.query(Alert).filter(Alert.decided_by == user_id).update({Alert.decided_by: None})
+    db.query(AccessLog).filter(AccessLog.performed_by == user_id).update({AccessLog.performed_by: None})
+    db.query(AuthorizedPerson).filter(AuthorizedPerson.added_by == user_id).update({AuthorizedPerson.added_by: None})
+    db.query(DoorState).filter(DoorState.changed_by == user_id).update({DoorState.changed_by: None})
+
     db.delete(user)
     db.commit()
     return {"message": f"User '{username}' removed"}

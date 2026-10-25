@@ -1,8 +1,12 @@
 // widget_test.dart — Unit and widget tests
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_door_app/theme/app_theme.dart';
 import 'package:smart_door_app/models/user_model.dart';
+import 'package:smart_door_app/providers/door_provider.dart';
+import 'package:smart_door_app/screens/login_screen.dart';
+import 'package:smart_door_app/theme/app_theme.dart';
+import 'package:smart_door_app/widgets/door_status_card.dart';
 import 'package:smart_door_app/widgets/role_badge.dart';
 
 void main() {
@@ -68,4 +72,37 @@ void main() {
     // 'member' and fallback for 'viewer' both use Icons.people_rounded and roleMember color
     expect(find.byIcon(Icons.people_rounded), findsNWidgets(2));
   });
+
+  testWidgets('DoorStatusCard renders status and does not display legacy Front Door label', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DoorStatusCard(
+            door: const DoorState(status: 'locked'),
+            canControl: true,
+            onLock: () {},
+            onUnlock: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('LOCKED'), findsOneWidget);
+    expect(find.text('Front Door'), findsNothing);
+  });
+
+  testWidgets('LoginScreen displays Username field and no Email field', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: LoginScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Email'), findsNothing);
+    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+  });
 }
+

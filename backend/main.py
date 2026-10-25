@@ -105,20 +105,29 @@ async def lifespan(app: FastAPI):
             )
             db.add(harish)
             print("[STARTUP] Seeded admin: harish")
+        else:
+            harish.is_active = True
+            harish.role = "admin"
 
         # Seed Admin 2: vishal
         vishal = db.query(User).filter(User.username == "vishal").first()
         if not vishal:
-            vishal = User(
-                name="Vishal",
-                username="vishal",
-                password_hash=hash_password("vishal123"),
-                role="admin",
-                is_active=True,
-                is_logged_in=False,
-            )
-            db.add(vishal)
-            print("[STARTUP] Seeded admin: vishal")
+            admin_count = db.query(User).filter(User.role == "admin").count()
+            if admin_count < 2:
+                vishal = User(
+                    name="Vishal",
+                    username="vishal",
+                    password_hash=hash_password("vishal123"),
+                    role="admin",
+                    is_active=True,
+                    is_logged_in=False,
+                )
+                db.add(vishal)
+                print("[STARTUP] Seeded admin: vishal")
+        else:
+            vishal.is_active = True
+            vishal.role = "admin"
+            vishal.name = "Vishal"
 
         # Reset active login sessions on backend restart
         db.query(User).update({User.is_logged_in: False})

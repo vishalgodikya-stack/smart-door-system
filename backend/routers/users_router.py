@@ -56,7 +56,7 @@ def update_user(
     if body.name is not None:
         user.name = body.name
     if body.role is not None:
-        if body.role not in ("admin", "member", "viewer"):
+        if body.role not in ("admin", "member"):
             raise HTTPException(status_code=400, detail="Invalid role")
         user.role = body.role
     if body.is_active is not None:
@@ -89,7 +89,7 @@ def create_invite(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    if body.role not in ("admin", "member", "viewer"):
+    if body.role not in ("admin", "member"):
         raise HTTPException(status_code=400, detail="Invalid role")
 
     token = secrets.token_urlsafe(32)

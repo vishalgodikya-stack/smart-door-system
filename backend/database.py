@@ -38,7 +38,7 @@ class User(Base):
     password_hash = Column(String(200), nullable=False)
     pin_hash = Column(String(200), nullable=True)
     totp_secret = Column(String(100), nullable=True)
-    role = Column(String(20), default="viewer")   # admin / member / viewer
+    role = Column(String(20), default="member")   # admin / member
     invite_token = Column(String(100), nullable=True, unique=True)
     is_active = Column(Boolean, default=True)
     fcm_token = Column(String, nullable=True)

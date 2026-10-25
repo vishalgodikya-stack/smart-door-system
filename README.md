@@ -12,7 +12,6 @@ An end-to-end IoT Smart Door Security System powered by **Raspberry Pi 4**, **Re
 - **Role-Based Access Control (RBAC)**:
   - **Admin**: Full door control, approve/reject alerts, live face enrollment, manage authorized persons & user invites.
   - **Member**: Lock/unlock door, approve/reject visitor alerts, view access logs.
-  - **Viewer**: Read-only status & history viewing, plus a **Request Access** button that captures a live camera snapshot and notifies Admins.
 - **Local Push-Button & Buzzer Doorbell**: Hardware doorbell loop running on the Raspberry Pi (`GPIO 23` input button + `GPIO 24` active buzzer).
 
 ---
@@ -88,7 +87,7 @@ Because the Raspberry Pi 4 outputs `3.3V` logic (max ~16 mA per pin) while the s
 | `/alerts` | `GET` | Admin, Member | List intruder and access-request alerts |
 | `/alerts/{id}/approve` | `POST` | Admin, Member | Approve visitor alert and unlock the door |
 | `/alerts/{id}/reject` | `POST` | Admin, Member | Reject visitor alert |
-| `/alerts/request-access` | `POST` | Viewer | Capture live visitor snapshot and notify Admins/Members |
+| `/alerts/request-access` | `POST` | Any Authenticated | Capture live visitor snapshot and notify Admins/Members |
 | `/logs` | `GET` | Any Authenticated | View historical door access and alert logs |
 | `/ws` | `WebSocket` | Any Authenticated | Real-time broadcast stream (`new_alert`, `door_status`, `alert_updated`) |
 

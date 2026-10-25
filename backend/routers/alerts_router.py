@@ -179,7 +179,7 @@ async def request_access(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Called by a viewer to request the door be opened. Triggers an alert."""
+    """Called to request the door be opened. Triggers an alert."""
     images_dir = os.environ.get("IMAGES_DIR", "./images")
     os.makedirs(images_dir, exist_ok=True)
 

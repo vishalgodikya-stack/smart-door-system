@@ -4,7 +4,7 @@ class UserModel {
   final int id;
   final String name;
   final String email;
-  final String role; // admin / member / viewer
+  final String role; // admin / member
   final bool isActive;
   final DateTime createdAt;
   final bool hasPin;
@@ -34,6 +34,5 @@ class UserModel {
 
   bool get isAdmin => role == 'admin';
   bool get isMember => role == 'member';
-  bool get isViewer => role == 'viewer';
   bool get canControl => role == 'admin' || role == 'member';
 }

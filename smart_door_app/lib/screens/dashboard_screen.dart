@@ -146,7 +146,7 @@ class _HomeTab extends ConsumerWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Hello, ${user?.name.split(' ').first ?? 'User'}',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      RoleBadge(role: user?.role ?? 'viewer'),
+                      RoleBadge(role: user?.role ?? 'member'),
                     ]),
                   ),
                   IconButton(

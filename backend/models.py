@@ -63,7 +63,7 @@ class UserUpdate(BaseModel):
 # ─── Invite ──────────────────────────────────────────────────────────────────────
 
 class InviteCreateRequest(BaseModel):
-    role: str            # admin / member / viewer
+    role: str            # admin / member
     email: Optional[str] = None
 
 

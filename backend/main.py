@@ -76,16 +76,8 @@ async def lifespan(app: FastAPI):
             )
             db.add(member)
 
-        # Seed demo viewer if not exists
-        if not db.query(User).filter(User.email == "viewer@smartdoor.com").first():
-            viewer = User(
-                name="Demo Viewer",
-                email="viewer@smartdoor.com",
-                password_hash=hash_password("viewer123"),
-                role="viewer",
-                is_active=True,
-            )
-            db.add(viewer)
+        # Migrate any legacy viewer accounts to member
+        db.query(User).filter(User.role == "viewer").update({"role": "member"})
 
         # Init door state if not exists
         if not db.query(DoorState).first():

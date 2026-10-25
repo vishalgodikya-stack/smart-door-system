@@ -51,7 +51,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
             // Role picker
             const Text('Role', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 8),
-            Row(children: ['member', 'viewer', 'admin'].map((role) => Expanded(
+            Row(children: ['member', 'admin'].map((role) => Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
@@ -190,7 +190,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       itemBuilder: (_) => [
                         const PopupMenuItem(value: 'admin', child: Text('Make Admin', style: TextStyle(color: AppColors.textPrimary))),
                         const PopupMenuItem(value: 'member', child: Text('Make Member', style: TextStyle(color: AppColors.textPrimary))),
-                        const PopupMenuItem(value: 'viewer', child: Text('Make Viewer', style: TextStyle(color: AppColors.textPrimary))),
                         const PopupMenuDivider(),
                         const PopupMenuItem(value: 'delete', child: Text('Remove User', style: TextStyle(color: AppColors.danger))),
                       ],

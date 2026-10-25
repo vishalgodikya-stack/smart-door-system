@@ -31,7 +31,6 @@ class AppColors {
   // Role badges
   static const roleAdmin = Color(0xFFFF6B6B);
   static const roleMember = Color(0xFF00D4FF);
-  static const roleViewer = Color(0xFF8892AA);
 }
 
 class AppTheme {

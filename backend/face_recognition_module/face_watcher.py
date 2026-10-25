@@ -133,7 +133,7 @@ def main():
             frame = picam2.capture_array()
             rgb_frame = frame
 
-            # Save latest frame for live enrollment stream and viewer access requests
+            # Save latest frame for live enrollment stream and access requests
             _save_latest_frame(rgb_frame)
 
             # During live enrollment, stream at ~10 FPS and pause intruder alerts/unlocking

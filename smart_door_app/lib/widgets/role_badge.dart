@@ -20,8 +20,8 @@ class RoleBadge extends StatelessWidget {
         icon = Icons.people_rounded;
         break;
       default:
-        color = AppColors.roleViewer;
-        icon = Icons.visibility_rounded;
+        color = AppColors.roleMember;
+        icon = Icons.people_rounded;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

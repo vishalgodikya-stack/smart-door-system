@@ -67,6 +67,7 @@ class Alert(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String(300), nullable=False)
     status = Column(String(20), default="pending")  # pending / approved / rejected
+    alert_type = Column(String(20), default="doorbell")  # doorbell / intruder / access_request
     decided_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     decision_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

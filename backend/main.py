@@ -74,6 +74,11 @@ def migrate_database():
             conn.exec_driver_sql("ALTER TABLE users ADD COLUMN is_logged_in BOOLEAN DEFAULT 0 NOT NULL")
             conn.commit()
 
+        cols_alerts = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(alerts)").fetchall()]
+        if "alert_type" not in cols_alerts:
+            conn.exec_driver_sql("ALTER TABLE alerts ADD COLUMN alert_type VARCHAR(20) DEFAULT 'doorbell'")
+            conn.commit()
+
 
 # ─── Startup ─────────────────────────────────────────────────────────────────────
 

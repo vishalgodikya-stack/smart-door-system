@@ -26,6 +26,7 @@ def _alert_to_out(alert: Alert) -> AlertOut:
         id=alert.id,
         image_url=f"{BASE_URL}/images/{os.path.basename(alert.image_path)}",
         status=alert.status,
+        alert_type=getattr(alert, "alert_type", "doorbell") or "doorbell",
         decided_by_name=alert.decided_by_user.name if alert.decided_by_user else None,
         decision_at=alert.decision_at,
         created_at=alert.created_at,
@@ -195,7 +196,8 @@ async def request_access(
 
     alert = Alert(
         image_path=filepath,
-        status="pending"
+        status="pending",
+        alert_type="access_request",
     )
     db.add(alert)
     db.commit()
@@ -215,7 +217,7 @@ async def request_access(
         db,
         title,
         body,
-        {"alert_id": str(alert.id), "type": "new_alert", "image_url": image_url},
+        {"alert_id": str(alert.id), "type": "new_alert", "alert_type": "access_request", "image_url": image_url},
         image_url=image_url,
     )
 
@@ -242,7 +244,8 @@ async def receive_camera_alert(
     # Create the alert record
     alert = Alert(
         image_path=filepath,
-        status="pending"
+        status="pending",
+        alert_type="intruder",
     )
     db.add(alert)
     db.commit()
@@ -258,11 +261,13 @@ async def receive_camera_alert(
 
     # Send Push Notification!
     image_url = f"{BASE_URL}/images/{filename}"
+    title = "⚠️ Unauthorized Person Detected"
+    body = "An unrecognized face was detected at the door. Tap to review."
     await send_push_notification(
         db,
-        "🔔 Someone at the Door",
-        "Someone is at the door! Tap to allow or deny entry.",
-        {"alert_id": str(alert.id), "type": "new_alert", "image_url": image_url},
+        title,
+        body,
+        {"alert_id": str(alert.id), "type": "new_alert", "alert_type": "intruder", "image_url": image_url},
         image_url=image_url,
     )
 

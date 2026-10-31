@@ -93,8 +93,18 @@ class NotificationService {
       // 5. Foreground Firebase message listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         if (kDebugMode) print('[FCM] Received foreground message: ${message.data}');
-        final title = message.notification?.title ?? '🔔 Doorbell Ring';
-        final body = message.notification?.body ?? 'Someone is at the door! Tap to allow or deny.';
+        final alertType = message.data['alert_type'] ?? 'doorbell';
+        final defaultTitle = alertType == 'intruder'
+            ? '⚠️ Unauthorized Person Detected'
+            : (alertType == 'access_request' ? '👋 Access Request' : '🔔 Someone at the Door');
+        final defaultBody = alertType == 'intruder'
+            ? 'An unrecognized face was detected at the door. Tap to review.'
+            : (alertType == 'access_request'
+                ? 'Someone is requesting access to the front door!'
+                : 'Doorbell ring — tap to allow or deny entry.');
+
+        final title = message.notification?.title ?? defaultTitle;
+        final body = message.notification?.body ?? defaultBody;
         final alertIdStr = message.data['alert_id'];
         final imageUrl = message.data['image_url'] ?? message.notification?.android?.imageUrl;
         final alertId = alertIdStr != null ? int.tryParse(alertIdStr.toString()) : null;

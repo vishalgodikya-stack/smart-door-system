@@ -61,7 +61,7 @@ def _trigger_doorbell_alert():
 
         db = SessionLocal()
         try:
-            alert = Alert(image_path=filepath, status="pending")
+            alert = Alert(image_path=filepath, status="pending", alert_type="doorbell")
             db.add(alert)
             db.commit()
             db.refresh(alert)
@@ -73,6 +73,7 @@ def _trigger_doorbell_alert():
                 "id": alert.id,
                 "image_url": image_url,
                 "status": "pending",
+                "alert_type": "doorbell",
                 "decided_by_name": None,
                 "decision_at": None,
                 "created_at": alert.created_at.isoformat(),
@@ -101,6 +102,7 @@ def _trigger_doorbell_alert():
                 data = {
                     "alert_id": str(alert.id),
                     "type": "new_alert",
+                    "alert_type": "doorbell",
                     "image_url": image_url,
                 }
                 asyncio.run(send_push_notification(db, title, body, data=data, image_url=image_url))

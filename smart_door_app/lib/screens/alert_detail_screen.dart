@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../models/alert_model.dart';
 import '../providers/alert_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
@@ -63,7 +64,7 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Unauthorized Access'),
+        title: Text(_appBarTitle(alert)),
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: () => context.pop()),
       ),
       body: SingleChildScrollView(
@@ -136,9 +137,9 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
                     ),
                   ]),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Someone at the Door',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    _headingTitle(alert),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -147,17 +148,17 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withOpacity(0.12),
+                        color: _alertColor(alert).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                        border: Border.all(color: _alertColor(alert).withOpacity(0.4)),
                       ),
-                      child: Row(children: const [
-                        Icon(Icons.doorbell_rounded, color: AppColors.warning, size: 24),
+                      child: Row(children: [
+                        Icon(_alertIcon(alert), color: _alertColor(alert), size: 24),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Someone is at the door. Do you want to allow or deny entry?',
-                            style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                            _pendingDescription(alert),
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                           ),
                         ),
                       ]),
@@ -224,6 +225,66 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
       case 'approved': return AppColors.success;
       case 'rejected': return AppColors.danger;
       default: return AppColors.warning;
+    }
+  }
+
+  String _appBarTitle(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return 'Unauthorized Person';
+      case 'access_request':
+        return 'Access Request';
+      case 'doorbell':
+      default:
+        return 'Doorbell Alert';
+    }
+  }
+
+  String _headingTitle(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return 'Unauthorized Person Detected';
+      case 'access_request':
+        return 'Access Request';
+      case 'doorbell':
+      default:
+        return 'Someone at the Door';
+    }
+  }
+
+  String _pendingDescription(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return 'An unrecognized face was detected at the door. Do you want to allow or deny entry?';
+      case 'access_request':
+        return 'Someone is requesting access to the front door. Do you want to allow or deny entry?';
+      case 'doorbell':
+      default:
+        return 'Someone is at the door. Do you want to allow or deny entry?';
+    }
+  }
+
+  IconData _alertIcon(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return Icons.warning_amber_rounded;
+      case 'access_request':
+        return Icons.person_pin_circle_outlined;
+      case 'doorbell':
+      default:
+        return Icons.doorbell_rounded;
+    }
+  }
+
+  Color _alertColor(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return const Color(0xFFFF9800);
+      case 'access_request':
+        return const Color(0xFF29B6F6);
+      case 'doorbell':
+      default:
+        return AppColors.warning;
     }
   }
 }

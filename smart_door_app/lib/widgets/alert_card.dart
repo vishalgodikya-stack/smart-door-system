@@ -23,6 +23,7 @@ class AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final typeColor = _alertTypeColor(alert);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -30,7 +31,7 @@ class AlertCard extends StatelessWidget {
           color: AppColors.card,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: alert.isPending ? AppColors.warning.withOpacity(0.5) : AppColors.cardBorder,
+            color: alert.isPending ? typeColor.withOpacity(0.55) : AppColors.cardBorder,
             width: alert.isPending ? 1.5 : 1,
           ),
         ),
@@ -43,9 +44,9 @@ class AlertCard extends StatelessWidget {
               width: 90, height: 90,
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(color: AppColors.surface, width: 90, height: 90,
-                  child: const Icon(Icons.person_outline, color: AppColors.textMuted)),
+                  child: Icon(_alertTypeIcon(alert), color: AppColors.textMuted)),
               errorWidget: (_, __, ___) => Container(color: AppColors.surface, width: 90, height: 90,
-                  child: const Icon(Icons.person_outline, color: AppColors.textMuted)),
+                  child: Icon(_alertTypeIcon(alert), color: AppColors.textMuted)),
             ),
           ),
 
@@ -59,13 +60,44 @@ class AlertCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(_statusLabel(alert.status),
                       style: TextStyle(color: _statusColor(alert.status), fontWeight: FontWeight.w600, fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: typeColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: typeColor.withOpacity(0.35), width: 0.8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_alertTypeIcon(alert), size: 11, color: typeColor),
+                        const SizedBox(width: 3),
+                        Text(
+                          alert.isIntruder ? 'CAMERA' : (alert.isAccessRequest ? 'REQUEST' : 'DOORBELL'),
+                          style: TextStyle(color: typeColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
                   const Spacer(),
                   Text(DateFormat('HH:mm').format(alert.createdAt.toLocal()),
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 ]),
-                const SizedBox(height: 4),
-                const Text('Someone at the Door', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-                const Text('Doorbell ring — tap to allow or deny', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 5),
+                Text(
+                  _alertTitle(alert),
+                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  _alertSubtitle(alert),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
 
                 // Quick approve/reject (pending only & canDecide)
                 if (alert.isPending && canDecide) ...[
@@ -121,6 +153,54 @@ class AlertCard extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  String _alertTitle(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return 'Unauthorized Person Detected';
+      case 'access_request':
+        return 'Access Request';
+      case 'doorbell':
+      default:
+        return 'Someone at the Door';
+    }
+  }
+
+  String _alertSubtitle(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return 'Unrecognized face detected — tap to review';
+      case 'access_request':
+        return 'Someone requested entry — tap to review';
+      case 'doorbell':
+      default:
+        return 'Doorbell ring — tap to allow or deny';
+    }
+  }
+
+  IconData _alertTypeIcon(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return Icons.warning_amber_rounded;
+      case 'access_request':
+        return Icons.person_pin_circle_outlined;
+      case 'doorbell':
+      default:
+        return Icons.doorbell_outlined;
+    }
+  }
+
+  Color _alertTypeColor(AlertModel a) {
+    switch (a.alertType) {
+      case 'intruder':
+        return const Color(0xFFFF9800); // Amber warning
+      case 'access_request':
+        return const Color(0xFF29B6F6); // Cyan/blue
+      case 'doorbell':
+      default:
+        return AppColors.primary;
+    }
   }
 
   Color _statusColor(String s) {

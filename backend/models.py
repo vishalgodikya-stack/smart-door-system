@@ -78,6 +78,7 @@ class AlertOut(BaseModel):
     id: int
     image_url: str
     status: str
+    alert_type: str = "doorbell"
     decided_by_name: Optional[str]
     decision_at: Optional[datetime]
     created_at: datetime

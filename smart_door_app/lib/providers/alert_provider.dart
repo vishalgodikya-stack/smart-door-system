@@ -32,6 +32,7 @@ class AlertNotifier extends Notifier<AlertState> {
       id: data['id'],
       imageUrl: data['image_url'] ?? '',
       status: 'pending',
+      alertType: data['alert_type'] ?? 'doorbell',
       createdAt: DateTime.now(),
     );
     state = AlertState(alerts: [newAlert, ...state.alerts]);
@@ -43,6 +44,7 @@ class AlertNotifier extends Notifier<AlertState> {
             id: a.id,
             imageUrl: a.imageUrl,
             status: status,
+            alertType: a.alertType,
             decidedByName: a.decidedByName,
             decisionAt: DateTime.now(),
             createdAt: a.createdAt,
